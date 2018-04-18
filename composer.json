@@ -1,0 +1,25 @@
+{
+    "name": "cabalphp/cabal-core",
+    "type": "library",
+    "license": "Apache-2.0",
+    "authors": [
+        {
+            "name": "keefe",
+            "email": "keefe.wu@outlook.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "Cabal\\Core\\": "src/"
+        },
+        "files": [
+            "src/functions.php"
+        ]
+    },
+    "require": {
+        "php": "^7.0.0",
+        "ext-swoole": "^2.0.0",
+        "cabalphp/cabal-route": "^0.1",
+        "zendframework/zend-diactoros": "^1.7"
+    }
+}
