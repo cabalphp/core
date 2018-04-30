@@ -4,7 +4,7 @@ namespace Cabal\Core\Cache;
 
 interface StoreInterface
 {
-    public function __construct($config);
+    public function __construct(Manager $manager, $config);
 
     public function set($key, $val, $minutes);
     public function forever($key, $val);

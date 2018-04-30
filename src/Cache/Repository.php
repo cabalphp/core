@@ -8,7 +8,7 @@ class Repository
      *
      * @var \Cabal\Core\Cache\StoreInterface
      */
-    protected $store = [];
+    protected $store;
 
     protected $prefix;
 

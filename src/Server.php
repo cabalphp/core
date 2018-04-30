@@ -1,53 +1,39 @@
 <?php
-namespace Cabal\Core\Application;
+namespace Cabal\Core;
 
-use Cabal\Core\Http\Server;
 
-class Boot
+class Server extends \Swoole\Http\Server
 {
-
     protected $root;
+
+    protected $debug = false;
 
     protected $env;
 
     /**
-     * @var \Cabal\Core\Application\Config
-     */
-    protected $config;
-
-    /**
      * Undocumented variable
      *
-     * @var \Cabal\Core\Application\Dispatcher
+     * @var \Cabal\Core\Dispatcher
      */
     protected $dispatcher;
 
-
-    /**
-     * Undocumented function
-     *
-     * @param string $root root
-     * @param string $env env
-     */
-    public function __construct($root, $env = 'prod')
+    public function __construct($root, $env)
     {
         $this->root = $root;
-        $this->env = $env ? : 'prod';
-        $this->config = new Config($this->root . '/conf', $this->env);
+        $this->env = $env;
 
         $this->dispatcher = new Dispatcher();
-    }
+        $this->config = new Config($this->root . '/conf', $this->env);
+        $this->debug = $this->config->get('cabal.debug', false);
 
-    protected function initServer()
-    {
         $host = $this->config->get('cabal.host', '127.0.0.1');
         $port = $this->config->get('cabal.port', 9501);
         $mode = $this->config->get('cabal.mode', SWOOLE_PROCESS);
         $sockType = $this->config->get('cabal.sockType', SWOOLE_SOCK_TCP);
-        $server = new Server($this, $host, $port, $mode, $sockType);
 
-        $server->debug($this->config->get('cabal.debug', false));
+        parent::__construct($host, $port, $mode, $sockType);
 
+        $this->addListener($host, $port + 1, SWOOLE_SOCK_TCP);
         $swooleSettings = (array)$this->config->get('cabal.swoole', []);
         $swooleSettings = array_merge([
             'daemonize' => true,
@@ -60,37 +46,35 @@ class Boot
 
         ], $swooleSettings);
 
-        $server->set($swooleSettings);
+        $this->set($swooleSettings);
 
-        $server->on('start', [$this->dispatcher, 'onStart']);
+        $this->on('start', [$this->dispatcher, 'onStart']);
+        $this->on("workerStart", [$this->dispatcher, 'onWorkerStart']);
+        $this->on('request', [$this->dispatcher, 'onRequest']);
+        $this->on('task', [$this->dispatcher, 'onTask']);
+        $this->on('finish', [$this->dispatcher, 'onFinish']);
 
-        $server->on("workerStart", [$this->dispatcher, 'onWorkerStart']);
+        $this->dispatcher->setServer($this);
 
-        $server->on('request', [$this->dispatcher, 'onRequest']);
-
-        $this->dispatcher->setServer($server);
-
-        return $server;
     }
+
+    public function debug($isDebug = null)
+    {
+        if ($isDebug !== null) {
+            $this->debug = $isDebug;
+        }
+        return $this->debug;
+    }
+
 
     /**
      * Undocumented function
      *
-     * @return \Cabal\Core\Application\Dispatcher
+     * @return \Cabal\Core\Dispatcher
      */
     public function getDispatcher()
     {
         return $this->dispatcher;
-    }
-
-    public function env()
-    {
-        return $this->env;
-    }
-
-    public function start()
-    {
-        return $this->initServer()->start();
     }
 
     public function rootPath($path)
@@ -103,6 +87,10 @@ class Boot
         return $this->config->get($name, $default);
     }
 
+    public function env()
+    {
+        return $this->env;
+    }
     public function version()
     {
         return '0.0.1-α';

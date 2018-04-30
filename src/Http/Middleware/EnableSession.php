@@ -2,7 +2,7 @@
 namespace Cabal\Core\Http\Middleware;
 
 use Cabal\Core\Http\Request;
-use Cabal\Core\Http\Server;
+use Cabal\Core\Server;
 use Cabal\Core\Http\Session;
 use Cabal\Core\Http\SessionHandler\RedisSessionHandler;
 
@@ -10,9 +10,9 @@ class EnableSession
 {
     public function handle(Server $server, Request $request, $vars, $next, $middlewareArgs = [])
     {
-        $config = $server->boot()->configure('cabal.session', []);
+        $config = $server->configure('cabal.session', []);
 
-        $sessionHandler = new RedisSessionHandler($server->boot()->cache());
+        $sessionHandler = new RedisSessionHandler($server->cache());
         $sessionId = $request->cookie(isset($config['name']) ? $config['name'] : 'session_id');
         if (!$sessionId || strlen($sessionId) != 32) {
             $sessionId = $sessionHandler->create_sid();

@@ -1,9 +1,7 @@
 <?php
-namespace Cabal\Core\Cache\Boot;
+namespace Cabal\Core\Cache;
 
-use Cabal\Core\Cache\Facade;
-
-trait HasCache
+trait ServerHasCache
 {
     protected $cache;
 
@@ -15,7 +13,7 @@ trait HasCache
     public function cache()
     {
         if (!$this->cache) {
-            $this->cache = new Facade($this->configure('cabal.cache'));
+            $this->cache = new Manager($this->configure('cabal.cache'));
         }
         return $this->cache;
     }

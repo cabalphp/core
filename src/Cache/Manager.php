@@ -1,9 +1,10 @@
 <?php
-
 namespace Cabal\Core\Cache;
 
 class Manager implements RepositoryInterface
 {
+    protected $pools = [];
+
     protected $repository = [];
 
     protected $config = [];
@@ -35,33 +36,77 @@ class Manager implements RepositoryInterface
      */
     public function getRepository($name)
     {
-        if (!isset($this->repository[$name])) {
-            $storeConfig = $this->config[$name];
-            $driver = isset($storeConfig['driver']) ? $storeConfig['driver'] : $name;
-            if ($driver instanceof \Closure) {
-                $store = $driver($storeConfig);
-                $this->repository[$name] = new Repository($store, $this->config['prefix']);
-            } elseif (class_exists($driver)) {
-                $store = new $driver($storeConfig);
-                $this->repository[$name] = new Repository($store, $this->config['prefix']);
-            } elseif (method_exists($this, "create" . ucfirst($name) . 'Store')) {
-                $method = "create" . ucfirst($name) . 'Store';
-                $store = $this->$method($storeConfig);
-                $this->repository[$name] = new Repository($store, $this->config['prefix']);
-            } else {
-                throw new \InvalidArgumentException(sprintf(
-                    'Invalid Cache driver "%s"; must be an defined driver(redis|file) or classname or \Closure',
-                    gettype($response)
-                ));
-            }
+        $storeConfig = $this->config[$name];
+        $driver = isset($storeConfig['driver']) ? $storeConfig['driver'] : $name;
+        if ($driver instanceof \Closure) {
+            $connection = $driver($storeConfig);
+        } elseif (method_exists($this, "create" . ucfirst($name) . 'Store')) {
+            $method = "create" . ucfirst($name) . 'Store';
+            $connection = $this->$method($storeConfig);
+        } elseif (class_exists($driver)) {
+            $connection = new $driver($storeConfig);
+        } else {
+            throw new \InvalidArgumentException(sprintf(
+                'Invalid Cache driver "%s"; must be an defined driver(redis|file) or classname or \Closure',
+                gettype($response)
+            ));
         }
-        return $this->repository[$name];
+        return new Repository($connection, $this->config['prefix']);
+    }
 
+    public function push($connection)
+    {
+        $this->pools[$connection->getId()]->push($connection);
     }
 
     protected function createRedisStore($config)
     {
-        return new RedisCacheStore($config);
+        if (is_array($config['host'])) {
+            $config['host'] = $config['host'][mt_rand(0, count($config['host']) - 1)];
+        }
+        $connectionId = "redis:" . http_build_query($config);
+        if (!isset($this->pools[$connectionId])) {
+            $this->pools[$connectionId] = new \SplQueue;
+        }
+        $connection = $this->pools[$connectionId]->isEmpty() ? null : $this->pools[$connectionId]->shift();
+
+        if ($connection) {
+            try {
+                if (!$connection->isConnected() || !$connection->ping()) {
+                    $connection = null;
+                }
+            } catch (\Exception $ex) {
+                $connection = null;
+                echo "redis连接可能已断开:" . $ex->getMessage() . "\r\n"; 
+                //@todo: log  
+            }
+        }
+        if (!$connection) {
+            if (\Swoole\Coroutine::getuid() >= 0) {
+                $connection = new Connection\CoroutineRedis();
+                $connection->connect($config['host'], $config['port']);
+                if (!$connection->isConnected()) {
+                    throw new Exception("Redis连接失败:" . $connection->errMsg, $connection->errCode);
+                }
+                if (isset($config['auth']) && $config['auth']) {
+                    $connection->auth($config['auth']);
+                }
+                $connection->setId($connectionId);
+            } else {
+                $connection = new Connection\Redis();
+                try {
+                    $connection->pconnect($config['host'], $config['port']);
+                } catch (\Exception $ex) {
+                    throw new Exception("Redis连接失败:" . $ex->getMessage(), $ex->getCode(), $ex);
+                }
+                if (isset($config['auth']) && $config['auth']) {
+                    $connection->auth($config['auth']);
+                }
+                $connection->setId($connectionId);
+            }
+        }
+
+        return new RedisCacheStore($this, $connection);
     }
 
     public function key($key)

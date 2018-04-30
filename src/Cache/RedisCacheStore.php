@@ -4,15 +4,24 @@ namespace Cabal\Core\Cache;
 
 class RedisCacheStore implements StoreInterface
 {
+    /**
+     * Undocumented variable
+     *
+     * @var \Cabal\Core\Cache\Manager
+     */
+    protected $manager;
+
+    /**
+     * Undocumented variable
+     *
+     * @var \Cabal\Core\Cache\Coroutine\Redis
+     */
     protected $redis;
 
-    public function __construct($config)
+    public function __construct(Manager $manager, $redis)
     {
-        $this->redis = new \Swoole\Coroutine\Redis();
-        $this->redis->connect($config['host'], $config['port']);
-        if ($config['auth']) {
-            $this->redis->auth($config['auth']);
-        }
+        $this->manager = $manager;
+        $this->redis = $redis;
     }
 
     public function set($key, $val, $minutes)
@@ -40,4 +49,12 @@ class RedisCacheStore implements StoreInterface
     {
         return $this->redis->decrby($key, $amount);
     }
+
+    public function __destruct()
+    {
+        if ($this->redis->getId()) {
+            $this->manager->push($this->redis);
+        }
+    }
+
 }

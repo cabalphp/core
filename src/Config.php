@@ -1,5 +1,5 @@
 <?php
-namespace Cabal\Core\Application;
+namespace Cabal\Core;
 
 class Config
 {

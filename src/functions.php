@@ -37,27 +37,9 @@ function array_get($array, $name, $default = null)
     return $array;
 }
 
-function cabalCall($callable, $args = [])
-{
-    if (is_string($callable)) {
-        if (strpos($callable, '::') !== false) {
-            $callable = explode('::', $callable);
-        } elseif (strpos($callable, '@') !== false) {
-            list($controllerName, $method) = explode('@', $callable);
-            $callable = [new $controllerName(), $method];
-        }
+if (!function_exists('with')) {
+    function with($obj)
+    {
+        return $obj;
     }
-    if ($callable instanceof \Closure) {
-        return $callable(...$args);
-    } elseif (is_array($callable)) {
-        if (is_object($callable[0])) {
-            return $callable[0]->$callable[1](...$args);
-        } elseif (is_string($callable[0])) {
-            return $callable[0]::$callable[1](...$args);
-        }
-    } elseif (is_string($callable) && function_exists($callable)) {
-        return $callable(...$args);
-    }
-
-    throw new \Exception('handler' . var_export($callable, true) . " isn't callable");
 }
