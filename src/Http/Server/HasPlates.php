@@ -1,5 +1,5 @@
 <?php
-namespace Cabal\Core\Http\Boot;
+namespace Cabal\Core\Http\Server;
 
 trait HasPlates
 {
