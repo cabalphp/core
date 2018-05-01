@@ -3,8 +3,8 @@ namespace Cabal\Core\Http\Middleware;
 
 use Cabal\Core\Http\Request;
 use Cabal\Core\Server;
-use Cabal\Core\Http\Session;
-use Cabal\Core\Http\SessionHandler\RedisSessionHandler;
+use Cabal\Core\Session;
+use Cabal\Core\SessionHandler\RedisSessionHandler;
 
 class EnableSession
 {

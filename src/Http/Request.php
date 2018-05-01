@@ -78,6 +78,13 @@ class Request extends ServerRequest
         return array_get($this->getCookieParams(), $name, $default);
     }
 
+    /**
+     * Undocumented function
+     *
+     * @param [type] $name
+     * @param [type] $val
+     * @return \Cabal\Core\Session
+     */
     public function session($name = null, $val = null)
     {
         $session = $this->getAttribute('session');
@@ -91,6 +98,41 @@ class Request extends ServerRequest
             case 2:
                 $session->offsetSet($name, $val);
                 return $session;
+                break;
+            default:
+                throw new \InvalidArgumentException(sprintf(
+                    'Invalid args num "%d"',
+                    count(func_get_args())
+                ));
+                break;
+        }
+    }
+
+
+    public function fd()
+    {
+        return $this->getAttribute('fd');
+    }
+    /**
+     * Undocumented function
+     *
+     * @param [type] $name
+     * @param [type] $val
+     * @return \Cabal\Core\Session 
+     */
+    public function fdSession($name = null, $val = null)
+    {
+        $fdSession = $this->getAttribute('fdSession');
+        switch (count(func_get_args())) {
+            case 0:
+                return $fdSession;
+                break;
+            case 1:
+                return $fdSession->offsetGet($name);
+                break;
+            case 2:
+                $fdSession->offsetSet($name, $val);
+                return $fdSession;
                 break;
             default:
                 throw new \InvalidArgumentException(sprintf(

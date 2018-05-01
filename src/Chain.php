@@ -13,8 +13,6 @@ class Chain
 
     protected $vars;
 
-    protected $strategy;
-
     function __construct($handler, $middleware, $vars = [])
     {
         $this->handler = $handler;
@@ -22,7 +20,7 @@ class Chain
         $this->vars = $vars;
     }
 
-    public function execute($params, $middlewares = [], $strategy = null)
+    public function execute($params, $middlewares = [])
     {
         $handler = $this->handler;
         $middleware = $this->middleware;
@@ -64,12 +62,21 @@ class Chain
         if (is_string($callable)) {
             if (strpos($callable, '::') !== false) {
                 $callable = explode('::', $callable);
+                if (!method_exists($callable[0], $callable[1])) {
+                    throw new Exception\ChainValidException("Handler must be callable");
+                }
             } elseif (strpos($callable, '@') !== false) {
                 list($controllerName, $method) = explode('@', $callable);
                 $callable = [new $controllerName(), $method];
+                if (!method_exists($callable[0], $callable[1])) {
+                    throw new Exception\ChainValidException("Handler must be callable");
+                }
             } elseif (function_exists($callable)) {
             } elseif (class_exists($callable)) {
                 $callable = [new $callable(), 'handle'];
+                if (!method_exists($callable[0], $callable[1])) {
+                    throw new Exception\ChainValidException("Handler must be callable");
+                }
             }
         }
         return Coroutine::call_user_func_array($callable, $params);

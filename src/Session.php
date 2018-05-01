@@ -1,7 +1,7 @@
 <?php
-namespace Cabal\Core\Http;
+namespace Cabal\Core;
 
-use Cabal\Core\Http\SessionHandler\AbstractSessionHandler;
+use Cabal\Core\SessionHandler\AbstractSessionHandler;
 
 
 class Session implements \Iterator, \ArrayAccess, \Countable, \JsonSerializable
@@ -14,7 +14,7 @@ class Session implements \Iterator, \ArrayAccess, \Countable, \JsonSerializable
     /**
      * Undocumented variable
      *
-     * @var \Cabal\Core\Http\SessionHandler\AbstractSessionHandler
+     * @var \Cabal\Core\SessionHandler\AbstractSessionHandler
      */
     protected $handler;
 
@@ -27,17 +27,8 @@ class Session implements \Iterator, \ArrayAccess, \Countable, \JsonSerializable
         'cookie_domain' => '',
         'cookie_secure' => false,
         'cookie_httponly' => true,
+        'filter' => [],
     ];
-
-    public function config($name, $default = null)
-    {
-        return isset($this->config[$name]) ? $this->config[$name] : $default;
-    }
-
-    public function sessionId()
-    {
-        return $this->sessionId;
-    }
 
     public function __construct(AbstractSessionHandler $handler, $sessionId, $config = [])
     {
@@ -50,6 +41,16 @@ class Session implements \Iterator, \ArrayAccess, \Countable, \JsonSerializable
 
         $this->data = $this->handler->read($this->sessionId);
         $this->data = $this->data ? unserialize($this->data) : [];
+    }
+
+    public function config($name, $default = null)
+    {
+        return isset($this->config[$name]) ? $this->config[$name] : $default;
+    }
+
+    public function sessionId()
+    {
+        return $this->sessionId;
     }
 
     public function offsetExists($key)
@@ -96,9 +97,16 @@ class Session implements \Iterator, \ArrayAccess, \Countable, \JsonSerializable
         return current($this->data) !== false;
     }
 
+    public function toArray()
+    {
+        return array_filter($this->data, function ($key) {
+            return !in_array($key, $this->config['filter']);
+        }, ARRAY_FILTER_USE_KEY);
+    }
+
     public function jsonSerialize()
     {
-        return $this->data;
+        return $this->toArray();
     }
 
     public function delete()

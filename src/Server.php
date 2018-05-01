@@ -2,7 +2,7 @@
 namespace Cabal\Core;
 
 
-class Server extends \Swoole\Http\Server
+class Server extends \Swoole\WebSocket\Server
 {
     protected $root;
 
@@ -47,13 +47,6 @@ class Server extends \Swoole\Http\Server
         ], $swooleSettings);
 
         $this->set($swooleSettings);
-
-        $this->on('start', [$this->dispatcher, 'onStart']);
-        $this->on("workerStart", [$this->dispatcher, 'onWorkerStart']);
-        $this->on('request', [$this->dispatcher, 'onRequest']);
-        $this->on('task', [$this->dispatcher, 'onTask']);
-        $this->on('finish', [$this->dispatcher, 'onFinish']);
-
         $this->dispatcher->setServer($this);
 
     }

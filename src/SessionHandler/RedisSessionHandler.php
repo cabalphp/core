@@ -1,6 +1,6 @@
 <?php
 
-namespace Cabal\Core\Http\SessionHandler;
+namespace Cabal\Core\SessionHandler;
 
 use Cabal\Core\Cache\RepositoryInterface;
 
