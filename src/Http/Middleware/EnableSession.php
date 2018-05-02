@@ -39,7 +39,7 @@ class EnableSession
             $session->config('cookie_domain'),
             $session->config('cookie_secure'),
             $session->config('cookie_httponly')
-        );;
+        );
 
     }
 }

@@ -9,13 +9,13 @@ use Cabal\Core\Http\Exception\MethodNotAllowedException;
 use Psr\Http\Message\RequestInterface;
 use Cabal\Core\Http\Exception\NotFoundException;
 use Psr\Http\Message\ResponseInterface;
-use Zend\Diactoros\Response;
 use Cabal\Core\Http\Request;
 use Swoole\Coroutine;
 use Cabal\Core\Http\Headers;
 use Cabal\Core\Session;
 use Cabal\Core\SessionHandler\ArraySessionHandler;
 use Cabal\Core\Http\Frame;
+use Cabal\Core\Http\Response;
 
 
 class Dispatcher
@@ -34,8 +34,6 @@ class Dispatcher
     protected $methodNotAllowedChain;
 
     protected $exceptionChain;
-
-    protected $fdSessionHandler;
 
     /**
      * Undocumented variable
@@ -82,28 +80,28 @@ class Dispatcher
     {
         $connectionInfo = $server->connection_info($fd);
         if (isset($connectionInfo['websocket_status'])) {
-            $fdSession = new Session($this->fdSessionHandler(), $fd, [
+            $fdSession = new Session($this->server->fdSessionHandler(), $fd, [
                 'filter' => ['__chain', '__vars'],
             ]);
             if (isset($fdSession['__chain'])) {
                 $chain = \swoole_serialize::unpack($fdSession['__chain']);
                 $vars = \swoole_serialize::unpack($fdSession['__vars']);
 
-                $chain = new Chain($chain['handler'] . 'Close', $chain['middleware'], $vars);
+                $chain = new Chain($chain['handler'] . 'Close', [], $vars);
                 try {
-                    $chain->execute([$this->server, $fd, $reactorId]);
+                    $chain->execute([$this->server, $fd, $reactorId], []);
                 } catch (Exception\ChainValidException $ex) {
                 }
             }
         }
 
-        $this->fdSessionHandler()->destroy($fd);
+        $this->server->fdSessionHandler()->destroy($fd);
     }
 
     public function onTask(Server $server, $taskId, $workerId, $data)
     {
         $chain = $this->newChain($data);
-        $response = $chain->execute([$server, $taskId, $workerId]);
+        $response = $chain->execute([$server, $taskId, $workerId], $this->middlewares);
         if ($response) {
             return $response;
         }
@@ -117,7 +115,7 @@ class Dispatcher
     public function onPipeMessage(Server $server, $workerId, $message)
     {
         $chain = $this->newChain($data);
-        $response = $chain->execute([$server, $taskId, $workerId]);
+        $response = $chain->execute([$server, $taskId, $workerId], $this->middlewares);
         if ($response) {
             return $response;
         }
@@ -156,14 +154,14 @@ class Dispatcher
     public function onHandShake($swooleRequest, $swooleResponse)
     {
         $request = $this->newRequest($swooleRequest, 'WS');
+        $request = $request->withAttribute('fd', $swooleRequest->fd);
         list($code, $chain, $vars) = $this->route->dispatch($request);
 
-        $fdSession = new Session($this->fdSessionHandler(), $swooleRequest->fd, [
+        $fdSession = new Session($this->server->fdSessionHandler(), $swooleRequest->fd, [
             'filter' => ['__chain', '__vars'],
         ]);
         $fdSession['__chain'] = \swoole_serialize::pack($chain);
         $fdSession['__vars'] = \swoole_serialize::pack($vars);
-        $request = $request->withAttribute('fd', $swooleRequest->fd);
         $request = $request->withAttribute('fdSession', $fdSession);
 
         switch ($code) {
@@ -175,21 +173,23 @@ class Dispatcher
             case Route::FOUND:
                 $chain = new Chain($chain['handler'] . 'HandShake', $chain['middleware'], $vars);
                 try {
-                    $response = $chain->execute([$this->server, $request]);
+                    $response = $chain->execute([$this->server, $request], $this->middlewares, function ($response) use ($swooleRequest) {
+                        if ($response === false) {
+                            return false;
+                        } elseif ($response instanceof Headers) {
+                            $response = $this->websocketResponse($swooleRequest, new Response(), $response);
+                        } elseif ($response === true || $response === null) {
+                            $response = $this->websocketResponse($swooleRequest, new Response());
+                        } elseif (!($response instanceof ResponseInterface)) {
+                            throw new \UnexpectedValueException(sprintf(
+                                'response "%s"; must be bool,null,Headers or Response',
+                                gettype($response)
+                            ));
+                        }
+                        return $response;
+                    });
                 } catch (Exception\ChainValidException $ex) {
                     $response = true;
-                }
-                if ($response === false) {
-                    return false;
-                } elseif ($response instanceof Headers) {
-                    $response = $this->websocketResponse($swooleRequest, new Response(), $response);
-                } elseif ($response === true || $response === null) {
-                    $response = $this->websocketResponse($swooleRequest, new Response());
-                } elseif (!($response instanceof ResponseInterface)) {
-                    throw new \UnexpectedValueException(sprintf(
-                        'response "%s"; must be bool,null,Headers or Response',
-                        gettype($response)
-                    ));
                 }
 
                 foreach ($response->getHeaders() as $name => $values) {
@@ -206,8 +206,8 @@ class Dispatcher
                 $swooleResponse->end();
                 if ($response->getStatusCode() === 101) {
                     $fdSession->write();
-                    $this->server->defer(function () use ($request) {
-                        $this->onOpen($this->server, $request);
+                    $this->server->defer(function () use ($swooleRequest) {
+                        $this->onOpen($this->server, $swooleRequest);
                     });
                     return true;
                 } else {
@@ -223,17 +223,19 @@ class Dispatcher
         }
     }
 
-    public function onOpen($server, $request)
+    public function onOpen($server, $swooleRequest)
     {
-        $fdSession = new Session($this->fdSessionHandler(), $request->fd(), [
+        $request = $this->newRequest($swooleRequest, 'WS');
+        $request = $request->withAttribute('fd', $swooleRequest->fd);
+        $fdSession = new Session($this->server->fdSessionHandler(), $request->fd(), [
             'filter' => ['__chain', '__vars'],
         ]);
         $chain = \swoole_serialize::unpack($fdSession['__chain']);
         $vars = \swoole_serialize::unpack($fdSession['__vars']);
 
-        $chain = new Chain($chain['handler'] . 'Open', $chain['middleware'], $vars);
+        $chain = new Chain($chain['handler'] . 'Open', [], $vars);
         try {
-            $chain->execute([$this->server, $request]);
+            $chain->execute([$this->server, $request], []);
             $fdSession->write();
         } catch (Exception\ChainValidException $ex) {
         }
@@ -241,7 +243,7 @@ class Dispatcher
 
     public function onMessage($server, $frame)
     {
-        $fdSession = new Session($this->fdSessionHandler(), $frame->fd, [
+        $fdSession = new Session($this->server->fdSessionHandler(), $frame->fd, [
             'filter' => ['__chain', '__vars'],
         ]);
         $chain = \swoole_serialize::unpack($fdSession['__chain']);
@@ -249,16 +251,13 @@ class Dispatcher
 
         $frame = new Frame($frame, $fdSession);
 
-        $chain = new Chain($chain['handler'] . 'Message', $chain['middleware'], $vars);
-        $chain->execute([$this->server, $frame]);
+        $chain = new Chain($chain['handler'] . 'Message', [], $vars);
+        $chain->execute([$this->server, $frame], []);
         $fdSession->write();
-
     }
 
     public function onRequest($swooleRequest, $swooleResponse)
     {
-        $scheme = strtolower(current(explode('/', $swooleRequest->server['server_protocol'])));
-        $fullUri = implode('', [$scheme, '://', $swooleRequest->header['host'], $swooleRequest->server['request_uri']]);
         $request = $this->newRequest($swooleRequest);
         list($code, $chain, $vars) = $this->route->dispatch($request);
 
@@ -272,7 +271,7 @@ class Dispatcher
             case Route::FOUND:
                 $chain = new Chain($chain['handler'], $chain['middleware'], $vars);
                 try {
-                    $response = $chain->execute([$this->server, $request]);
+                    $response = $chain->execute([$this->server, $request], $this->middlewares, [$this, 'response']);
                 } catch (\Exception $ex) {
                     $response = $this->handlerException($ex, $chain, $request);
                 }
@@ -364,7 +363,7 @@ class Dispatcher
      * @param boolean $websocket
      * @return \Zend\Diactoros\Response
      */
-    protected function response($response, $websocket = false)
+    public function response($response)
     {
         if (!($response instanceof ResponseInterface)) {
             $body = '';
@@ -479,19 +478,5 @@ class Dispatcher
             $swooleRequest->post ? : [],
             str_replace('HTTP/', '', $swooleRequest->server['server_protocol'])
         );
-    }
-
-
-    /**
-     * Undocumented function
-     *
-     * @return \Cabal\Core\SessionHandler\ArraySessionHandler
-     */
-    public function fdSessionHandler()
-    {
-        if (!$this->fdSessionHandler) {
-            $this->fdSessionHandler = new ArraySessionHandler();
-        }
-        return $this->fdSessionHandler;
     }
 }

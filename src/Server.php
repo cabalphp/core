@@ -13,6 +13,13 @@ class Server extends \Swoole\WebSocket\Server
     /**
      * Undocumented variable
      *
+     * @var \Cabal\Core\SessionHandler\ArraySessionHandler 
+     */
+    protected $fdSessionHandler;
+
+    /**
+     * Undocumented variable
+     *
      * @var \Cabal\Core\Dispatcher
      */
     protected $dispatcher;
@@ -59,6 +66,21 @@ class Server extends \Swoole\WebSocket\Server
         return $this->debug;
     }
 
+
+
+
+    /**
+     * Undocumented function
+     *
+     * @return \Cabal\Core\SessionHandler\ArraySessionHandler
+     */
+    public function fdSessionHandler()
+    {
+        if (!$this->fdSessionHandler) {
+            $this->fdSessionHandler = new ArraySessionHandler();
+        }
+        return $this->fdSessionHandler;
+    }
 
     /**
      * Undocumented function

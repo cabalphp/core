@@ -20,13 +20,13 @@ class Chain
         $this->vars = $vars;
     }
 
-    public function execute($params, $middlewares = [])
+    public function execute($params, $middlewares = [], $converter = null)
     {
         $handler = $this->handler;
         $middleware = $this->middleware;
 
-        $next = function () use ($handler) {
-            return $this->call($handler, func_get_args());
+        $next = function () use ($handler, $converter) {
+            return $this->call($handler, func_get_args(), $converter);
         };
 
         if ($middleware) {
@@ -39,11 +39,11 @@ class Chain
                     $middlewareArgs = (array)$middlewareArgs;
                 }
                 if (isset($middlewares[$middlewareName])) {
-                    $next = function () use ($middlewareName, $middlewareArgs, $next, $middlewares) {
+                    $next = function () use ($middlewareName, $middlewareArgs, $next, $middlewares, $converter) {
                         $params = func_get_args();
                         $params[] = $next;
                         $params[] = $middlewareArgs;
-                        return $this->call($middlewares[$middlewareName], $params);
+                        return $this->call($middlewares[$middlewareName], $params, $converter);
                     };
                 } else {
                     throw new \Exception("middleware '{$middlewareName}' not found");
@@ -56,7 +56,7 @@ class Chain
     }
 
 
-    protected function call($callable, $params)
+    protected function call($callable, $params, $converter = null)
     {
 
         if (is_string($callable)) {
@@ -79,6 +79,10 @@ class Chain
                 }
             }
         }
-        return Coroutine::call_user_func_array($callable, $params);
+        $result = Coroutine::call_user_func_array($callable, $params);
+        if ($converter) {
+            $result = Coroutine::call_user_func_array($converter, [$result]);
+        }
+        return $result;
     }
 }
