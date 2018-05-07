@@ -66,10 +66,15 @@ class Chain
                     throw new Exception\ChainValidException("Handler must be callable");
                 }
             } elseif (strpos($callable, '@') !== false) {
-                list($controllerName, $method) = explode('@', $callable);
-                $callable = [new $controllerName(), $method];
-                if (!method_exists($callable[0], $callable[1])) {
+                list($class, $method) = explode('@', $callable);
+                $class = new $class();
+                if ($class instanceof ChainExecutor) {
+                    $callable = [$class, 'execute'];
+                    $params = [$method, $params];
+                } elseif (!method_exists($class, $method)) {
                     throw new Exception\ChainValidException("Handler must be callable");
+                } else {
+                    $callable = [$class, $method];
                 }
             } elseif (function_exists($callable)) {
             } elseif (class_exists($callable)) {

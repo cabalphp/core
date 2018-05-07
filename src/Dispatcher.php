@@ -16,6 +16,7 @@ use Cabal\Core\Session;
 use Cabal\Core\SessionHandler\ArraySessionHandler;
 use Cabal\Core\Http\Frame;
 use Cabal\Core\Http\Response;
+use Cabal\Core\Exception\BadRequestException;
 
 
 class Dispatcher
@@ -348,6 +349,11 @@ class Dispatcher
                 [$this->server, $ex, $chain, $request],
                 $this->middlewares
             );
+        }
+        if ($ex instanceof BadRequestException) {
+            $body = '';
+            $body = '<ul><li>' . implode("</li><li>", $ex->getMessages()) . '</li></ul>';
+            return '<html><head><title>400 Bad Request</title></head><body bgcolor="white"><h1>400 Bad Request</h1>' . $body . '</body></html>';
         }
         $body = '';
         if ($this->server->debug()) {

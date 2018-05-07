@@ -1,6 +1,7 @@
 <?php
 namespace Cabal\Core;
 
+use Cabal\Core\SessionHandler\ArraySessionHandler;
 
 class Server extends \Swoole\WebSocket\Server
 {
@@ -39,8 +40,7 @@ class Server extends \Swoole\WebSocket\Server
         $sockType = $this->config->get('cabal.sockType', SWOOLE_SOCK_TCP);
 
         parent::__construct($host, $port, $mode, $sockType);
-
-        $this->addListener($host, $port + 1, SWOOLE_SOCK_TCP);
+        // $this->addListener($host, $port + 1, SWOOLE_SOCK_TCP); 
         $swooleSettings = (array)$this->config->get('cabal.swoole', []);
         $swooleSettings = array_merge([
             'daemonize' => true,

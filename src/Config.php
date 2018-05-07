@@ -20,7 +20,7 @@ class Config
                 $filePath = $this->dir . "/{$subFolder}" . $file . '.php';
                 if (file_exists($filePath)) {
                     $array = (array)require $filePath;
-                    $this->loadeds[$file] = array_merge($this->loadeds[$file], $array);
+                    $this->loadeds[$file] = array_merge_recursive($this->loadeds[$file], $array);
                 }
             }
         }

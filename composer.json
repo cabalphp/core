@@ -20,6 +20,7 @@
         "php": "^7.0.0",
         "ext-swoole": "^2.0.0",
         "cabalphp/cabal-route": "dev-dev",
-        "zendframework/zend-diactoros": "^1.7"
+        "zendframework/zend-diactoros": "^1.7",
+        "vlucas/valitron": "^1.4"
     }
 }
