@@ -5,6 +5,11 @@ use Zend\Diactoros\ServerRequest;
 
 class Request extends ServerRequest
 {
+    public function ip()
+    {
+        return array_get($this->getServerParams(), 'remote_addr');
+    }
+
     public function isXhr()
     {
         return strtolower($this->getHeaderLine('X-Requested-With')) === 'xmlhttprequest';
