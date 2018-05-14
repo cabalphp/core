@@ -69,4 +69,11 @@ class Repository
     {
         return $this->get($key) ? : $this->set($key, $callback(), $minutes);;
     }
+
+    public function call($cmd, $argsOrArg1 = [])
+    {
+        $args = func_get_args();
+        return $this->store->call(...$args);
+    }
+
 }

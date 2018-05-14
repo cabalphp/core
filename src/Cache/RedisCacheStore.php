@@ -50,6 +50,17 @@ class RedisCacheStore implements StoreInterface
         return $this->redis->decrby($key, $amount);
     }
 
+    public function call($cmd, $argsOrArg1 = [])
+    {
+        if (is_array($argsOrArg1) && func_num_args() === 2) {
+            return $this->redis->$cmd(...$argsOrArg1);
+        } else {
+            $args = func_get_args();
+            $cmd = array_shift($args);
+            return $this->redis->$cmd(...$args);
+        }
+    }
+
     public function __destruct()
     {
         if ($this->redis->getId()) {

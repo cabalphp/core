@@ -163,4 +163,10 @@ class Manager implements RepositoryInterface
     {
         return $this->getDefaultRepo()->remember($key, $minutes, $callback);
     }
+
+    public function call($cmd, $argsOrArg1 = [])
+    {
+        $args = func_get_args();
+        return $this->getDefaultRepo()->call(...$args);
+    }
 }

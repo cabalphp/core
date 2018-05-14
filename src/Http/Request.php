@@ -7,7 +7,7 @@ class Request extends ServerRequest
 {
     public function ip()
     {
-        return array_get($this->getServerParams(), 'remote_addr');
+        return array_get($this->getServerParams(), '');
     }
 
     public function isXhr()
