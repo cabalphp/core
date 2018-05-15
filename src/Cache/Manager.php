@@ -9,8 +9,11 @@ class Manager implements RepositoryInterface
 
     protected $config = [];
 
-    function __construct($config)
+    protected $isTaskWorker;
+
+    function __construct($config, $isTaskWorker)
     {
+        $this->isTaskWorker = $isTaskWorker;
         $this->config = array_merge([
             'default' => 'file',
             'prefix' => '',
@@ -82,7 +85,7 @@ class Manager implements RepositoryInterface
             }
         }
         if (!$connection) {
-            if (\Swoole\Coroutine::getuid() >= 0) {
+            if (!$this->isTaskWorker) {
                 $connection = new Connection\CoroutineRedis();
                 $connection->connect($config['host'], $config['port']);
                 if (!$connection->isConnected()) {

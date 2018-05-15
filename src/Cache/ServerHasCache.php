@@ -13,7 +13,7 @@ trait ServerHasCache
     public function cache()
     {
         if (!$this->cache) {
-            $this->cache = new Manager($this->configure('cabal.cache'));
+            $this->cache = new Manager($this->configure('cabal.cache'), $this->taskworker);
         }
         return $this->cache;
     }

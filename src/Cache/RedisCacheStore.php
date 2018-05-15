@@ -26,16 +26,17 @@ class RedisCacheStore implements StoreInterface
 
     public function set($key, $val, $minutes)
     {
-        $this->redis->set($key, $val);
+        $this->redis->set($key, serialize($val));
         $this->redis->expire($key, $minutes * 60);
     }
     public function forever($key, $val)
     {
-        $this->redis->set($key, $val);
+        $this->redis->set($key, serialize($val));
     }
     public function get($key)
     {
-        return $this->redis->get($key);
+        $val = $this->redis->get($key);
+        return $val ? unserialize($val) : $val;
     }
     public function del($key)
     {
