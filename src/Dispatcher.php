@@ -472,17 +472,22 @@ class Dispatcher
         $scheme = strtolower(current(explode('/', $swooleRequest->server['server_protocol'])));
         $fullUri = implode('', [$scheme, '://', $swooleRequest->header['host'], $swooleRequest->server['request_uri']]);
         $method = $method ? : $swooleRequest->server['request_method'];
-        return new Request(
+        $fp = fopen('php://memory', 'rw');
+        if ($swooleRequest->rawContent()) {
+            fwrite($fp, $swooleRequest->rawContent());
+        }
+        $request = new Request(
             $swooleRequest->server,
             $swooleRequest->files ? : [],
             $fullUri,
             $method,
-            $swooleRequest->rawContent() ? : fopen('/dev/null', 'r'),
+            $fp,
             $swooleRequest->header ? : [],
             $swooleRequest->cookie ? : [],
             $swooleRequest->get ? : [],
             $swooleRequest->post ? : [],
             str_replace('HTTP/', '', $swooleRequest->server['server_protocol'])
         );
+        return $request;
     }
 }
