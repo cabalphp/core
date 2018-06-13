@@ -25,7 +25,7 @@ class Repository
 
     public function set($key, $val, $minutes)
     {
-        $this->store->set($this->key($key), $val, $minutes);
+        $this->store->set($this->key($key), serialize($val), $minutes);
         return $val;
     }
 
@@ -36,7 +36,8 @@ class Repository
 
     public function get($key, $default = null)
     {
-        return $this->store->get($this->key($key));
+        $ret = $this->store->get($this->key($key));
+        return $ret ? unserialize($ret) : $ret;
     }
 
     public function forget($key)
