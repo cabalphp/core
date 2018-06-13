@@ -36,8 +36,8 @@ class Repository
 
     public function get($key, $default = null)
     {
-        $ret = $this->store->get($this->key($key));
-        return $ret ? unserialize($ret) : $ret;
+        $val = $this->store->get($this->key($key));
+        return $val ? unserialize($val) : $val;
     }
 
     public function forget($key)
