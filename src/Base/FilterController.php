@@ -31,7 +31,8 @@ class FilterController implements ChainExecutor
         Validator::lang($server->configure('cabal.validator.lang', 'zh-cn'));
         Validator::langDir($server->configure('cabal.validator.langDir'));
 
-        $validator = new Validator($request->only(array_keys($rules)));
+        $params = $request->only(array_keys($rules));
+        $validator = new Validator($params);
         $validator->mapFieldsRules($rules);
 
         if ($validator->validate()) {
