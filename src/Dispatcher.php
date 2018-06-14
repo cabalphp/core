@@ -322,7 +322,7 @@ class Dispatcher
                 $this->middlewares
             );
         }
-        return '<html><head><title>404 Not Found</title></head><body bgcolor="white"><h1>404 Not Found</h1></body></html>';
+        return Response::make('<html><head><title>404 Not Found</title></head><body bgcolor="white"><h1>404 Not Found</h1></body></html>', 404);
     }
 
     /**
@@ -339,7 +339,7 @@ class Dispatcher
                 $this->middlewares
             );
         }
-        return '<html><head><title>405 Method Not Allowed</title></head><body bgcolor="white"><h1>405 Method Not Allowed</h1></body></html>';
+        return Response::make('<html><head><title>405 Method Not Allowed</title></head><body bgcolor="white"><h1>405 Method Not Allowed</h1></body></html>', 405);
     }
 
     public function handlerException(\Exception $ex, $chain, $request)
@@ -353,13 +353,13 @@ class Dispatcher
         if ($ex instanceof BadRequestException) {
             $body = '';
             $body = '<ul><li>' . implode("</li><li>", $ex->getMessages()) . '</li></ul>';
-            return '<html><head><title>400 Bad Request</title></head><body bgcolor="white"><h1>400 Bad Request</h1>' . $body . '</body></html>';
+            return Response::make('<html><head><title>400 Bad Request</title></head><body bgcolor="white"><h1>400 Bad Request</h1>' . $body . '</body></html>', 400);
         }
         $body = '';
         if ($this->server->debug()) {
             $body = '<pre>' . $ex->__toString() . '</pre>';
         }
-        return '<html><head><title>500 Internal Server Error</title></head><body bgcolor="white"><h1>500 Internal Server Error</h1>' . $body . '</body></html>';
+        return Response::make('<html><head><title>500 Internal Server Error</title></head><body bgcolor="white"><h1>500 Internal Server Error</h1>' . $body . '</body></html>', 500);
     }
 
     /**
@@ -385,8 +385,7 @@ class Dispatcher
                     gettype($response)
                 ));
             }
-            $response = new Response();
-            $response->getBody()->write($body);
+            $response = Response::make($body);
         }
         return $response;
     }

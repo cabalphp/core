@@ -9,8 +9,13 @@ use Cabal\Core\ChainExecutor;
 use Cabal\Core\Exception\RequestInvalidException;
 
 
-class ApiController implements ChainExecutor
+class FilterController implements ChainExecutor
 {
+    public function rules()
+    {
+        return [];
+    }
+
     public function execute($method, $params = [])
     {
         $rules = $this->rules();
