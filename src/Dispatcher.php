@@ -342,7 +342,7 @@ class Dispatcher
         return Response::make('<html><head><title>405 Method Not Allowed</title></head><body bgcolor="white"><h1>405 Method Not Allowed</h1></body></html>', 405);
     }
 
-    public function handlerException(\Exception $ex, $chain, $request)
+    protected function handlerException(\Exception $ex, $chain, $request)
     {
         if ($this->exceptionChain) {
             return $this->exceptionChain->execute(

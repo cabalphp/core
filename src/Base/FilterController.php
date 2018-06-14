@@ -22,6 +22,7 @@ class FilterController implements ChainExecutor
         $rules = isset($rules[$method]) ? $rules[$method] : [];
         array_unshift($params, $rules);
         $this->filter(...$params);
+        array_shift($params);
         return $this->$method(...$params);
     }
 

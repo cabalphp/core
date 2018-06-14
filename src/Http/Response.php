@@ -19,4 +19,14 @@ class Response extends BaseResponse
         return $this->cookies;
     }
 
+
+    static function make($body, $statusCode = 200)
+    {
+        $r = new Response();
+        $r = $r->withStatus($statusCode);
+        $r->getBody()->write($body);
+        return $r;
+    }
+
+
 }
