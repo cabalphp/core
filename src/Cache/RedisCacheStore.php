@@ -66,6 +66,8 @@ class RedisCacheStore implements StoreInterface
     {
         if ($this->redis->getId()) {
             $this->manager->push($this->redis);
+        } else {
+            $this->redis->close();
         }
     }
 
