@@ -20,6 +20,13 @@ class Response extends BaseResponse
     }
 
 
+    /**
+     * Undocumented function
+     *
+     * @param [type] $body
+     * @param integer $statusCode
+     * @return \Cabal\Core\Http\Response
+     */
     static function make($body, $statusCode = 200)
     {
         $r = new Response();

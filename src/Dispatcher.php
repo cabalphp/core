@@ -149,6 +149,14 @@ class Dispatcher
                     throw new \Exception("route file '{$routePath}' not exists");;
                 }
             }
+            if ($this->server->debug() && $this->server->configure('cabal.document.enabled', true)) {
+                $route->group([
+                    'namespace' => 'Cabal\Core\Base',
+                ], function ($route) {
+                    $route->get('/__docs', 'DocumentController@getIndex');
+                    $route->get('/__docs/{filename}.md', 'DocumentController@getMarkdown');
+                });
+            }
         }
     }
 
@@ -311,6 +319,16 @@ class Dispatcher
     /**
      * Undocumented function
      *
+     * @return \Cabal\Route\RouteCollection
+     */
+    public function getRoute()
+    {
+        return $this->route;
+    }
+
+    /**
+     * Undocumented function
+     *
      * @param RequestInterface $request
      * @return \Psr\Http\Message\ResponseInterface
      */
@@ -372,20 +390,19 @@ class Dispatcher
     public function response($response)
     {
         if (!($response instanceof ResponseInterface)) {
-            $body = '';
             if (is_array($response) || $response instanceof \stdClass || $response instanceof \JsonSerializable) {
-                $body = json_encode($response);
+                $response = Response::make(json_encode($response));
+                $response = $response->withHeader('Content-Type', 'application/json');
             } elseif (is_object($response) && method_exists($response, 'render')) {
-                $body = $response->render();
+                $response = Response::make($realResponse->render());
             } elseif (is_string($response) || is_numeric($response)) {
-                $body = $response;
+                $response = Response::make($response);
             } else {
                 throw new \InvalidArgumentException(sprintf(
                     'Invalid response "%s"; must be an string or object has render method',
                     gettype($response)
                 ));
             }
-            $response = Response::make($body);
         }
         return $response;
     }

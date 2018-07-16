@@ -32,18 +32,18 @@ class Server extends \Swoole\WebSocket\Server
 
         $this->dispatcher = new Dispatcher();
         $this->config = new Config($this->root . '/conf', $this->env);
-        $this->debug = $this->config->get('cabal.debug', false);
+        $this->debug = $this->configure('cabal.debug', false);
 
-        $host = $this->config->get('cabal.host', '127.0.0.1');
-        $port = $this->config->get('cabal.port', 9501);
-        $mode = $this->config->get('cabal.mode', SWOOLE_PROCESS);
-        $sockType = $this->config->get('cabal.sockType', SWOOLE_SOCK_TCP);
+        $host = $this->configure('cabal.host', '127.0.0.1');
+        $port = $this->configure('cabal.port', 9501);
+        $mode = $this->configure('cabal.mode', SWOOLE_PROCESS);
+        $sockType = $this->configure('cabal.sockType', SWOOLE_SOCK_TCP);
 
         parent::__construct($host, $port, $mode, $sockType);
         // $this->addListener($host, $port + 1, SWOOLE_SOCK_TCP); 
-        $swooleSettings = (array)$this->config->get('cabal.swoole', []);
+        $swooleSettings = (array)$this->configure('cabal.swoole', []);
         $swooleSettings = array_merge([
-            'daemonize' => true,
+            'daemonize' => false,
             'log_file' => $this->rootPath('var/log/cabal.log'),
             'pid_file' => $this->rootPath('var/cabal.pid'),
             'reload_async' => true,
