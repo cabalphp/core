@@ -76,4 +76,12 @@ class Repository
         return $this->store->call(...$args);
     }
 
+    public function __call($name, $args)
+    {
+        if (version_compare(phpversion('swoole'), '4.0.0', '<')) {
+            throw new \Exception("Redis协程需要在 swoole 4.0.0 或以上才支持魔术方法");
+        }
+        array_unshift($args, $name);
+        return $this->store->call(...$args);
+    }
 }

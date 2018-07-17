@@ -43,15 +43,15 @@ class Manager implements RepositoryInterface
         $driver = isset($storeConfig['driver']) ? $storeConfig['driver'] : $name;
         if ($driver instanceof \Closure) {
             $connection = $driver($storeConfig);
-        } elseif (method_exists($this, "create" . ucfirst($name) . 'Store')) {
-            $method = "create" . ucfirst($name) . 'Store';
+        } elseif (method_exists($this, "create" . ucfirst($driver) . 'Store')) {
+            $method = "create" . ucfirst($driver) . 'Store';
             $connection = $this->$method($storeConfig);
         } elseif (class_exists($driver)) {
             $connection = new $driver($storeConfig);
         } else {
             throw new \InvalidArgumentException(sprintf(
                 'Invalid Cache driver "%s"; must be an defined driver(redis|file) or classname or \Closure',
-                gettype($response)
+                gettype($driver)
             ));
         }
         return new Repository($connection, $this->config['prefix']);
@@ -170,6 +170,15 @@ class Manager implements RepositoryInterface
     public function call($cmd, $argsOrArg1 = [])
     {
         $args = func_get_args();
+        return $this->getDefaultRepo()->call(...$args);
+    }
+
+    public function __call($name, $args)
+    {
+        if (version_compare(phpversion('swoole'), '4.0.0', '<')) {
+            throw new \Exception("Redis协程需要在 swoole 4.0.0 或以上才支持魔术方法");
+        }
+        array_unshift($args, $name);
         return $this->getDefaultRepo()->call(...$args);
     }
 }

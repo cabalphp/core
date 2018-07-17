@@ -419,10 +419,8 @@ class Dispatcher
         $secWebSocketKey = $swooleRequest->header['sec-websocket-key'];
         $patten = '#^[+/0-9A-Za-z]{21}[AQgw]==$#';
         if (0 === preg_match($patten, $secWebSocketKey) || 16 !== strlen(base64_decode($secWebSocketKey))) {
-                // $swooleResponse->end();
             return false;
         }
-            // echo $swooleRequest->header['sec-websocket-key'];
         $key = base64_encode(sha1(
             $swooleRequest->header['sec-websocket-key'] . '258EAFA5-E914-47DA-95CA-C5AB0DC85B11',
             true
