@@ -22,5 +22,8 @@
         "cabalphp/cabal-route": "dev-dev",
         "zendframework/zend-diactoros": "^1.7",
         "vlucas/valitron": "^1.4"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^7"
     }
 }

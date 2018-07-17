@@ -51,7 +51,7 @@ class Manager implements RepositoryInterface
         } else {
             throw new \InvalidArgumentException(sprintf(
                 'Invalid Cache driver "%s"; must be an defined driver(redis|file) or classname or \Closure',
-                gettype($driver)
+                $driver
             ));
         }
         return new Repository($connection, $this->config['prefix']);
@@ -125,11 +125,6 @@ class Manager implements RepositoryInterface
     public function forever($key, $val)
     {
         return $this->getDefaultRepo()->forever($key, $val);
-    }
-
-    public function add($key, $val, $minutes)
-    {
-        return $this->getDefaultRepo()->add($key, $val, $minutes);
     }
 
     public function get($key, $default = null)

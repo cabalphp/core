@@ -51,18 +51,19 @@ class Repository
 
     public function increment($key, $amount = 1)
     {
-        $this->store->increment($this->key($key), $amount);
+        return $this->store->increment($this->key($key), $amount);
     }
 
     public function decrement($key, $amount = 1)
     {
-        $this->store->decrement($this->key($key), $amount);
+        return $this->store->decrement($this->key($key), $amount);
     }
 
     public function pull($key, $default = null)
     {
         $val = $this->get($this->key($key), $default);
         $this->del($key);
+        return $val;
     }
 
     public function remember($key, $minutes, \Closure $callback)
