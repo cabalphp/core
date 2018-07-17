@@ -126,6 +126,12 @@ class Dispatcher
     {
         $dispatcher = $this;
         $server = $this->server;
+        $initPath = $this->server->rootPath('usr/init.php');
+        if (file_exists($initPath)) {
+            $server = $this->server;
+            require $initPath;
+        }
+
         if ($this->server->taskworker) {
             foreach ($this->server->configure('cabal.tasks', [
                 'usr/tasks.php',
