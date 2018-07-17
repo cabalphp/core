@@ -136,7 +136,10 @@ class DocumentController
 
     protected function readme($server)
     {
-        $md = file_get_contents($server->rootPath('DOCS.md'));
+        $md = '# 请在项目根目录新建 DOCS.md';
+        if (file_exists($server->rootPath('DOCS.md'))) {
+            $md = file_get_contents($server->rootPath('DOCS.md'));
+        }
         return $md;
     }
 
@@ -307,7 +310,7 @@ class DocumentController
         $tag = 'apiTitle';
         $tagContent = [];
         foreach ($lines as $no => $line) {
-            $line = substr($line, strpos($line, '*') + 2);
+            $line = strpos($line, '*') !== false ? substr($line, strpos($line, '*') + 2) : $line;
             if (substr(ltrim($line), 0, 1) === '@') {
                 $line = explode(" ", ltrim($line));
                 if (count($tagContent) > 0) {
