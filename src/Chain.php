@@ -67,6 +67,10 @@ class Chain
                 }
             } elseif (strpos($callable, '@') !== false) {
                 list($class, $method) = explode('@', $callable);
+
+                if (!class_exists($class)) {
+                    throw new Exception\ChainValidException("Handler must be callable");
+                }
                 $class = new $class();
                 if ($class instanceof ChainExecutor) {
                     $callable = [$class, 'execute'];

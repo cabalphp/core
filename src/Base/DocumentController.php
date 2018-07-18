@@ -248,8 +248,8 @@ class DocumentController
             if (isset($api['comments']['apiParam'])) {
                 foreach ($api['comments']['apiParam'] as $paramDesc) {
                     $paramDesc = preg_split("~[ ]+~", trim($paramDesc));
-                    $paramName = array_shift($paramDesc);
                     $paramType = array_shift($paramDesc);
+                    $paramName = array_shift($paramDesc);
                     $paramDesc = implode(' ', $paramDesc);
 
 
