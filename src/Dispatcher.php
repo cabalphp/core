@@ -368,6 +368,8 @@ class Dispatcher
 
     protected function handlerException(\Exception $ex, $chain, $request)
     {
+        echo $ex->__toString();
+
         if ($this->exceptionChain) {
             return $this->exceptionChain->execute(
                 [$this->server, $ex, $chain, $request],

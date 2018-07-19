@@ -75,7 +75,8 @@ class Manager implements RepositoryInterface
 
         if ($connection) {
             try {
-                if (!$connection->isConnected() || !$connection->ping()) {
+                if (!$connection->isConnected()) {
+                    echo "redis连接可能已断开: 没有响应\r\n";
                     $connection = null;
                 }
             } catch (\Exception $ex) {
