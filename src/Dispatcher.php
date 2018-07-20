@@ -17,6 +17,8 @@ use Cabal\Core\SessionHandler\ArraySessionHandler;
 use Cabal\Core\Http\Frame;
 use Cabal\Core\Http\Response;
 use Cabal\Core\Exception\BadRequestException;
+use Cabal\Core\Logger\CoroutineHandler;
+use Monolog\Handler\StreamHandler;
 
 
 class Dispatcher
@@ -126,6 +128,8 @@ class Dispatcher
     {
         $dispatcher = $this;
         $server = $this->server;
+        $this->initLogger($server);
+
         $initPath = $this->server->rootPath('usr/init.php');
         if (file_exists($initPath)) {
             $server = $this->server;
@@ -163,6 +167,25 @@ class Dispatcher
                     $route->get('/__docs/{filename}.md', 'DocumentController@getMarkdown');
                 });
             }
+        }
+    }
+
+    protected function initLogger(Server $server)
+    {
+        if ($server->taskworker) {
+            Logger::instance()->pushHandler(
+                new StreamHandler(
+                    $server->configure('cabal.logFile', $this->server->rootPath('var/log/cabal.log')),
+                    $server->configure('cabal.logLevel', \Monolog\Logger::DEBUG)
+                )
+            );
+        } else {
+            Logger::instance()->pushHandler(
+                new CoroutineHandler(
+                    $server->configure('cabal.logFile', $this->server->rootPath('var/log/cabal.log')),
+                    $server->configure('cabal.logLevel', \Monolog\Logger::DEBUG)
+                )
+            );
         }
     }
 

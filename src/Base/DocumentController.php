@@ -39,14 +39,15 @@ class DocumentController
                 $lines[] = "\r\n##### 接口参数";
                 if (isset($api['params']) && $api['params']) {
                     $table = [];
-                    $table[] = sprintf('| %s | %s | %s | %s |', '参数名', '类型', '约束', '描述');
+                    $table[] = sprintf('| %s | %s | %s | %s | %s |', '参数名', '类型', '默认值', '约束', '描述');
                     $columnLengths = [];
                     foreach ($api['params'] as $paramName => $paramInfo) {
                         if (count($table) < 2) {
                             $table[] = sprintf(
-                                "| %s | %s | %s | %s |",
+                                "| %s | %s | %s | %s | %s |",
                                 str_repeat('-', strlen($paramName)),
                                 str_repeat('-', strlen($paramInfo['type'])),
+                                str_repeat('-', strlen($paramInfo['default'])),
                                 str_repeat('-', strlen($paramInfo['constraint'])),
                                 str_repeat('-', strlen($paramInfo['description']))
                             );
@@ -54,7 +55,7 @@ class DocumentController
                         if (strpos($paramName, '.') !== false) {
                             $paramName = str_repeat('&nbsp;', substr_count($paramName, '.') * 4) . $paramName;
                         }
-                        $table[] = sprintf("| %s | %s | %s | %s |", $paramName, $paramInfo['type'], $paramInfo['constraint'], $paramInfo['description']);
+                        $table[] = sprintf("| %s | %s | %s | %s | %s |", $paramName, $paramInfo['type'], $paramInfo['default'] ? : '', $paramInfo['constraint'], $paramInfo['description']);
                     }
                     $table = implode("\r\n", $table);
                     $lines[] = $table;
@@ -251,6 +252,10 @@ class DocumentController
                     $paramType = array_shift($paramDesc);
                     $paramName = array_shift($paramDesc);
                     $paramDesc = implode(' ', $paramDesc);
+                    $default = null;
+                    if (strpos($paramName, '=') !== false) {
+                        list($paramName, $default) = explode('=', $paramName);
+                    }
 
 
                     if (!isset($params[$paramName])) {
@@ -260,7 +265,8 @@ class DocumentController
                         ];
                     }
                     $params[$paramName]['type'] = $paramType;
-                    $params[$paramName]['description'] = $paramDesc;
+                    $params[$paramName]['description'] = str_replace(["\r", "\n"], '', nl2br($paramDesc));
+                    $params[$paramName]['default'] = $default;
                 }
                 unset($api['comments']);
             }
@@ -270,6 +276,7 @@ class DocumentController
                         $params[$paramName] = [
                             'type' => 'string',
                             'description' => '-',
+                            'default' => '',
                         ];
                     }
                     $params[$paramName]['constraint'] = $constraint;

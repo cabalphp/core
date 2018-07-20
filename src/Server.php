@@ -44,7 +44,7 @@ class Server extends \Swoole\WebSocket\Server
         $swooleSettings = (array)$this->configure('cabal.swoole', []);
         $swooleSettings = array_merge([
             'daemonize' => false,
-            'log_file' => $this->rootPath('var/log/cabal.log'),
+            'log_file' => $this->rootPath('var/log/swoole.log'),
             'pid_file' => $this->rootPath('var/cabal.pid'),
             'reload_async' => true,
             'request_slowlog_timeout' => 1,
