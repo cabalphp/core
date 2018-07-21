@@ -426,7 +426,7 @@ class Dispatcher
                 $response = $response->withHeader('Content-Type', 'application/json');
             } elseif (is_object($response) && method_exists($response, 'render')) {
                 $response = Response::make($realResponse->render());
-            } elseif (is_string($response) || is_numeric($response)) {
+            } elseif (is_string($response) || is_numeric($response) || is_bool($response)) {
                 $response = Response::make($response);
             } else {
                 throw new \InvalidArgumentException(sprintf(

@@ -42,6 +42,10 @@ class RedisCacheStore implements StoreInterface
     {
         $this->redis->del($key);
     }
+    public function ttl($key)
+    {
+        return $this->redis->ttl($key);
+    }
     public function increment($key, $amount = 1)
     {
         return $this->redis->incrby($key, $amount);

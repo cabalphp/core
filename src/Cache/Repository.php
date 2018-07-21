@@ -48,6 +48,10 @@ class Repository
     {
         $this->store->del($this->key($key));
     }
+    public function ttl($key)
+    {
+        return $this->store->ttl($this->key($key));
+    }
 
     public function increment($key, $amount = 1)
     {

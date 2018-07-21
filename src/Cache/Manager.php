@@ -142,6 +142,10 @@ class Manager implements RepositoryInterface
     {
         return $this->getDefaultRepo()->del($key);
     }
+    public function ttl($key)
+    {
+        return $this->getDefaultRepo()->ttl($key);
+    }
 
     public function increment($key, $amount = 1)
     {
