@@ -391,8 +391,6 @@ class Dispatcher
 
     protected function handlerException(\Exception $ex, $chain, $request)
     {
-        echo $ex->__toString();
-
         if ($this->exceptionChain) {
             return $this->exceptionChain->execute(
                 [$this->server, $ex, $chain, $request],
@@ -404,6 +402,7 @@ class Dispatcher
             $body = '<ul><li>' . implode("</li><li>", $ex->getMessages()) . '</li></ul>';
             return Response::make('<html><head><title>400 Bad Request</title></head><body bgcolor="white"><h1>400 Bad Request</h1>' . $body . '</body></html>', 400);
         }
+        Logger::error($ex->__toString());
         $body = '';
         if ($this->server->debug()) {
             $body = '<pre>' . $ex->__toString() . '</pre>';

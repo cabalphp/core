@@ -33,7 +33,17 @@ class FilterController implements ChainExecutor
 
         $params = $request->only(array_keys($rules));
         $validator = new Validator($params);
+        $labels = [];
+        foreach ($rules as $paramName => &$rule) {
+            if (isset($rule['label'])) {
+                $labels[$paramName] = $rule['label'];
+                unset($rule['label']);
+            }
+        }
         $validator->mapFieldsRules($rules);
+        if (count($labels) > 0) {
+            $validator->labels($labels);
+        }
 
         if ($validator->validate()) {
             return true;
