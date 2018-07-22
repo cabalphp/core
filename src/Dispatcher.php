@@ -47,6 +47,14 @@ class Dispatcher
 
     public function __construct()
     {
+        $this->registerErrorHandler();
+    }
+
+    protected function registerErrorHandler()
+    {
+        set_error_handler(function ($level, $message, $file, $line) {
+            throw new \ErrorException($message, 0, $level, $file, $line);
+        }, E_ALL);
     }
 
     public function setServer(Server $server)
@@ -311,7 +319,7 @@ class Dispatcher
                 try {
                     $response = $chain->execute([$this->server, $request], $this->middlewares, [$this, 'response']);
                 } catch (\Exception $ex) {
-                    $response = $this->handlerException($ex, $chain, $request);
+                    $response = $this->handleRequestException($ex, $chain, $request);
                 }
                 break;
         }
@@ -389,7 +397,7 @@ class Dispatcher
         return Response::make('<html><head><title>405 Method Not Allowed</title></head><body bgcolor="white"><h1>405 Method Not Allowed</h1></body></html>', 405);
     }
 
-    protected function handlerException(\Exception $ex, $chain, $request)
+    protected function handleRequestException(\Exception $ex, $chain, $request)
     {
         if ($this->exceptionChain) {
             return $this->exceptionChain->execute(
