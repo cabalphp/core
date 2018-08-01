@@ -69,14 +69,14 @@ class Chain
                 list($class, $method) = explode('@', $callable);
 
                 if (!class_exists($class)) {
-                    throw new Exception\ChainValidException("Handler must be callable");
+                    throw new Exception\ChainValidException("Handler must be callable(class {$class} not found)");
                 }
                 $class = new $class();
                 if ($class instanceof ChainExecutor) {
                     $callable = [$class, 'execute'];
                     $params = [$method, $params];
                 } elseif (!method_exists($class, $method)) {
-                    throw new Exception\ChainValidException("Handler must be callable");
+                    throw new Exception\ChainValidException("Handler must be callable(method not found)");
                 } else {
                     $callable = [$class, $method];
                 }

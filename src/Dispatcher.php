@@ -120,7 +120,8 @@ class Dispatcher
 
     public function onFinish(Server $server, $taskId, $data)
     {
-        print_r($data);
+        $chain = $this->newChain($data);
+        $chain->execute([$server, $taskId], $this->middlewares);
     }
 
     public function onPipeMessage(Server $server, $workerId, $message)
