@@ -37,6 +37,8 @@ class Dispatcher
 
     protected $exceptionChain;
 
+    protected $started = false;
+
     /**
      * Undocumented variable
      *
@@ -144,6 +146,7 @@ class Dispatcher
     {
         $dispatcher = $this;
         $server = $this->server;
+        $this->started = true;
         $this->initLogger($server);
 
         $initPath = $this->server->rootPath('usr/init.php');
@@ -172,7 +175,7 @@ class Dispatcher
                 if (file_exists($routePath)) {
                     require $routePath;
                 } else {
-                    throw new \Exception("route file '{$routePath}' not exists");;
+                    throw new \Exception("route file '{$routePath}' not exists");
                 }
             }
             if ($this->server->debug() && $this->server->configure('cabal.document.enabled', true)) {
@@ -518,6 +521,9 @@ class Dispatcher
 
     public function registerExceptionHandler($callableOrChain)
     {
+        if (!$this->started) {
+            throw new \Exception("Please register exception handler after worker start!");
+        }
         $this->exceptionChain = $this->newChain($callableOrChain);
         return $this;
     }
