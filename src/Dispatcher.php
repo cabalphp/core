@@ -18,7 +18,6 @@ use Cabal\Core\Http\Frame;
 use Cabal\Core\Http\Response;
 use Cabal\Core\Exception\BadRequestException;
 use Cabal\Core\Logger\CoroutineHandler;
-use Monolog\Handler\StreamHandler;
 
 
 class Dispatcher
@@ -47,10 +46,10 @@ class Dispatcher
 
     public function __construct()
     {
-        $this->registerErrorHandler();
+        $this->setErrorHandler();
     }
 
-    protected function registerErrorHandler()
+    protected function setErrorHandler()
     {
         set_error_handler(function ($level, $message, $file, $line) {
             throw new \ErrorException($message, 0, $level, $file, $line);
@@ -112,7 +111,11 @@ class Dispatcher
     public function onTask(Server $server, $taskId, $workerId, $data)
     {
         $chain = $this->newChain($data);
-        $response = $chain->execute([$server, $taskId, $workerId], $this->middlewares);
+        try {
+            $response = $chain->execute([$server, $taskId, $workerId], $this->middlewares);
+        } catch (\Exception $ex) {
+            $response = $this->handleTaskException($ex, $taskId, $workerId);
+        }
         if ($response) {
             return $response;
         }
@@ -121,7 +124,11 @@ class Dispatcher
     public function onFinish(Server $server, $taskId, $data)
     {
         $chain = $this->newChain($data);
-        $chain->execute([$server, $taskId], $this->middlewares);
+        try {
+            $chain->execute([$server, $taskId], $this->middlewares);
+        } catch (\Exception $ex) {
+            Logger::error($ex->__toString());
+        }
     }
 
     public function onPipeMessage(Server $server, $workerId, $message)
@@ -181,21 +188,12 @@ class Dispatcher
 
     protected function initLogger(Server $server)
     {
-        if ($server->taskworker) {
-            Logger::instance()->pushHandler(
-                new StreamHandler(
-                    $server->configure('cabal.logFile', $this->server->rootPath('var/log/cabal.log')),
-                    $server->configure('cabal.logLevel', \Monolog\Logger::DEBUG)
-                )
-            );
-        } else {
-            Logger::instance()->pushHandler(
-                new CoroutineHandler(
-                    $server->configure('cabal.logFile', $this->server->rootPath('var/log/cabal.log')),
-                    $server->configure('cabal.logLevel', \Monolog\Logger::DEBUG)
-                )
-            );
-        }
+        Logger::instance()->pushHandler(
+            new CoroutineHandler(
+                $server->configure('cabal.logFile', $this->server->rootPath('var/log/cabal.log')),
+                $server->configure('cabal.logLevel', \Monolog\Logger::DEBUG)
+            )
+        );
     }
 
     public function onHandShake($swooleRequest, $swooleResponse)
@@ -396,6 +394,32 @@ class Dispatcher
             );
         }
         return Response::make('<html><head><title>405 Method Not Allowed</title></head><body bgcolor="white"><h1>405 Method Not Allowed</h1></body></html>', 405);
+    }
+
+    public function handleException($ex)
+    {
+        if ($this->exceptionChain) {
+            return $this->exceptionChain->execute(
+                [$this->server, $ex],
+                $this->middlewares
+            );
+        }
+        Logger::error($ex->__toString());
+        return false;
+    }
+
+    protected function handleTaskException(\Exception $ex, $taskId, $workerId)
+    {
+        if ($this->exceptionChain) {
+            return $this->exceptionChain->execute(
+                [$this->server, $ex, $taskId, $workerId],
+                $this->middlewares
+            );
+        }
+        Logger::error($ex->__toString(), [
+            'taskId' => $taskId,
+            'workerId' => $workerId,
+        ]);
     }
 
     protected function handleRequestException(\Exception $ex, $chain, $request)

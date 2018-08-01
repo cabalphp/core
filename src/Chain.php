@@ -13,7 +13,7 @@ class Chain
 
     protected $vars;
 
-    function __construct($handler, $middleware, $vars = [])
+    function __construct($handler, $middleware = [], $vars = [])
     {
         $this->handler = $handler;
         $this->middleware = $middleware;

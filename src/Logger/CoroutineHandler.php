@@ -16,6 +16,10 @@ class CoroutineHandler extends AbstractProcessingHandler
 
     protected function write(array $record)
     {
-        \Swoole\Coroutine::writeFile($this->path, (string)$record['formatted'], FILE_APPEND);
+        if (\Swoole\Coroutine::getuid() >= 0) {
+            \Swoole\Coroutine::writeFile($this->path, (string)$record['formatted'], FILE_APPEND);
+        } else {
+            file_put_contents($this->path, (string)$record['formatted'], FILE_APPEND);
+        }
     }
 }
