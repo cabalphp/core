@@ -88,10 +88,19 @@ class Chain
                 }
             }
         }
-        $result = Coroutine::call_user_func_array($callable, $params);
+        $result = static::callUserFuncArray($callable, $params);
         if ($converter) {
-            $result = Coroutine::call_user_func_array($converter, [$result]);
+            $result = static::callUserFuncArray($converter, [$result]);
         }
         return $result;
+    }
+
+    static public function callUserFuncArray($callable, $params = [])
+    {
+        if (version_compare(phpversion('swoole'), '4.0.0', '<')) {
+            return Coroutine::call_user_func_array($callable, $params);
+        } else {
+            return call_user_func_array($callable, $params);
+        }
     }
 }
