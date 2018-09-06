@@ -76,8 +76,8 @@ class Dispatcher
         $server->on('connect', [$this, 'onConnect']);
         $server->on('receive', [$this, 'onReceive']);
         $server->on('packet', [$this, 'onPacket']);
-        $server->on('bufferFull', [$this, 'onBufferFull']);
-        $server->on('bufferEmpty', [$this, 'onBufferEmpty']);
+        // $server->on('bufferFull', [$this, 'onBufferFull']);
+        // $server->on('bufferEmpty', [$this, 'onBufferEmpty']);
 
         $server->on('close', [$this, 'onClose']);
 
