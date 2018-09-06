@@ -39,6 +39,8 @@ class Dispatcher
 
     protected $started = false;
 
+    protected $extends = [];
+
     /**
      * Undocumented variable
      *
@@ -64,13 +66,20 @@ class Dispatcher
 
 
         $server->on('start', [$this, 'onStart']);
-        $server->on('close', [$this, 'onClose']);
         $server->on("workerStart", [$this, 'onWorkerStart']);
         $server->on('request', [$this, 'onRequest']);
         $server->on('message', [$this, 'onMessage']);
         $server->on('handShake', [$this, 'onHandShake']);
         $server->on('task', [$this, 'onTask']);
         $server->on('finish', [$this, 'onFinish']);
+
+        $server->on('connect', [$this, 'onConnect']);
+        $server->on('receive', [$this, 'onReceive']);
+        $server->on('packet', [$this, 'onPacket']);
+        $server->on('bufferFull', [$this, 'onBufferFull']);
+        $server->on('bufferEmpty', [$this, 'onBufferEmpty']);
+
+        $server->on('close', [$this, 'onClose']);
 
         return $this;
     }
@@ -80,34 +89,42 @@ class Dispatcher
         echo "Server@" . $this->server->env() . " is started at http://{$server->host}:{$server->port}\r\n";
     }
 
-    public function onReceive(Server $server, $fd, $reactor_id, $data)
+    public function onConnect(Server $server, $fd, $reactorId)
     {
+        $serverPort = $server->connections[$fd]['server_port'];
+        if (isset($this->extends[$serverPort])) {
+            $this->getExtendServer($serverPort)->onConnect($server, $fd, $reactorId);
+        }
     }
 
-    public function onPacket(Server $server, $data, $client_info)
+    public function onReceive(Server $server, $fd, $reactorId, $data)
     {
+        $handler = $this->getExtendServer($server->connections[$fd]['server_port']);
+        $handler->onReceive($server, $fd, $reactorId, $data);
+    }
+
+    public function onPacket(Server $server, $data, $clientInfo)
+    {
+        $handler = $this->getExtendServer($server->connections[$fd]['server_port']);
+        $handler->onPacket($server, $data, $clientInfo);
     }
 
     public function onClose(Server $server, $fd, $reactorId)
     {
         $connectionInfo = $server->connection_info($fd);
-        if (isset($connectionInfo['websocket_status'])) {
-            $fdSession = new Session($this->server->fdSessionHandler(), $fd, [
-                'filter' => ['__chain', '__vars'],
-            ]);
+        if (isset($this->extends[$connectionInfo['server_port']])) {
+            $this->getExtendServer($connectionInfo['server_port'])->onClose($server, $fd, $reactorId);
+        } elseif (isset($connectionInfo['websocket_status'])) {
+            $fdSession = $this->server->fdSession($fd);
             if (isset($fdSession['__chain'])) {
                 $chain = \swoole_serialize::unpack($fdSession['__chain']);
                 $vars = \swoole_serialize::unpack($fdSession['__vars']);
 
                 $chain = new Chain($chain['handler'] . 'Close', [], $vars);
-                try {
-                    $chain->execute([$this->server, $fd, $reactorId], []);
-                } catch (Exception\ChainValidException $ex) {
-                }
+                $chain->execute([$this->server, $fd, $reactorId, $fdSession], []);
+                $this->server->destroyFdSession($fd);
             }
         }
-
-        $this->server->fdSessionHandler()->destroy($fd);
     }
 
     public function onTask(Server $server, $taskId, $workerId, $data)
@@ -205,10 +222,8 @@ class Dispatcher
         $request = $request->withAttribute('fd', $swooleRequest->fd);
         list($code, $chain, $vars) = $this->route->dispatch($request);
 
-        $fdSession = new Session($this->server->fdSessionHandler(), $swooleRequest->fd, [
-            'filter' => ['__chain', '__vars'],
-        ]);
-        $fdSession['__chain'] = \swoole_serialize::pack($chain);
+        $fdSession = $this->server->fdSession($swooleRequest->fd);
+        $fdSession['__chain'] = \swoole_serialize::pack($ƒ);
         $fdSession['__vars'] = \swoole_serialize::pack($vars);
         $request = $request->withAttribute('fdSession', $fdSession);
 
@@ -275,25 +290,19 @@ class Dispatcher
     {
         $request = $this->newRequest($swooleRequest, 'WS');
         $request = $request->withAttribute('fd', $swooleRequest->fd);
-        $fdSession = new Session($this->server->fdSessionHandler(), $request->fd(), [
-            'filter' => ['__chain', '__vars'],
-        ]);
+        $fdSession = $this->server->fdSession($request->fd());
+
         $chain = \swoole_serialize::unpack($fdSession['__chain']);
         $vars = \swoole_serialize::unpack($fdSession['__vars']);
 
         $chain = new Chain($chain['handler'] . 'Open', [], $vars);
-        try {
-            $chain->execute([$this->server, $request], []);
-            $fdSession->write();
-        } catch (Exception\ChainValidException $ex) {
-        }
+        $chain->execute([$this->server, $request], []);
+        $fdSession->write();
     }
 
     public function onMessage($server, $frame)
     {
-        $fdSession = new Session($this->server->fdSessionHandler(), $frame->fd, [
-            'filter' => ['__chain', '__vars'],
-        ]);
+        $fdSession = $this->server->fdSession($frame->fd);
         $chain = \swoole_serialize::unpack($fdSession['__chain']);
         $vars = \swoole_serialize::unpack($fdSession['__vars']);
 
@@ -506,6 +515,20 @@ class Dispatcher
 
     }
 
+    public function setExtendServer($port, $handlerClass)
+    {
+        $this->extends[$port] = $handlerClass;
+    }
+    /**
+     * Undocumented function
+     *
+     * @param [type] $port
+     * @return \Cabal\Core\Server\Protocol
+     */
+    public function getExtendServer($port)
+    {
+        return $this->extends[$port];
+    }
 
     public function registerMissingHandler($callableOrChain)
     {

@@ -11,6 +11,8 @@ class Server extends \Swoole\WebSocket\Server
 
     protected $env;
 
+    protected $extends = [];
+
     /**
      * Undocumented variable
      *
@@ -58,6 +60,16 @@ class Server extends \Swoole\WebSocket\Server
 
     }
 
+    public function extendServer($host, $port, $handler)
+    {
+        $listen = $this->listen($host, $port, SWOOLE_SOCK_TCP);
+        //["{$host}:{$port}"] = $handlerClass; 
+        $listen->set(['open_http_protocol' => false]);
+        $listen->set($handler->protocolSettings());
+
+        $this->dispatcher->setExtendServer($port, $handler);
+    }
+
     public function debug($isDebug = null)
     {
         if ($isDebug !== null) {
@@ -82,6 +94,19 @@ class Server extends \Swoole\WebSocket\Server
         return $this->fdSessionHandler;
     }
 
+
+    public function fdSession($fd, $config = [])
+    {
+        $config = array_merge([
+            'filter' => ['__chain', '__vars'],
+        ], $config);
+        return new Session($this->fdSessionHandler(), $fd, $config);
+    }
+
+    public function destroyFdSession($fd)
+    {
+        $this->fdSessionHandler()->destroy($fd);
+    }
     /**
      * Undocumented function
      *

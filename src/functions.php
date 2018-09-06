@@ -1,5 +1,24 @@
 <?php
 
+function camel_case($string)
+{
+    $string = ucwords(str_replace(array('-', '_'), ' ', $string));
+    return lcfirst(str_replace(' ', '', $string));
+}
+
+function camel_keys($array)
+{
+    $result = [];
+    foreach ($array as $key => $value) {
+        if (is_array($value)) {
+            $value = camel_keys($value);
+        }
+        $result[camel_case($key)] = $value;
+        var_dump($result);
+    }
+    return $result;
+}
+
 function array_except($array, $keys)
 {
     return array_diff_key($array, array_flip((array)$keys));
