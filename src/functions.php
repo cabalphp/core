@@ -14,7 +14,6 @@ function camel_keys($array)
             $value = camel_keys($value);
         }
         $result[camel_case($key)] = $value;
-        var_dump($result);
     }
     return $result;
 }
