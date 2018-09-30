@@ -576,11 +576,19 @@ class Dispatcher
     protected function newRequest($swooleRequest, $method = null)
     {
         $scheme = strtolower(current(explode('/', $swooleRequest->server['server_protocol'])));
+        var_dump($swooleRequest->header);
+        if (!isset($swooleRequest->header['host'])) {
+            Logger::debug('Header lost header field', [$swooleRequest->header]);
+        }
         $fullUri = implode('', [$scheme, '://', $swooleRequest->header['host'], $swooleRequest->server['request_uri']]);
         $method = $method ? : $swooleRequest->server['request_method'];
         $fp = fopen('php://memory', 'rw');
         if ($swooleRequest->rawContent()) {
             fwrite($fp, $swooleRequest->rawContent());
+        }
+        $postData = $swooleRequest->post;
+        if (isset($swooleRequest->header['content-type']) && strpos($swooleRequest->header['content-type'], 'json') !== false) {
+            $postData = json_decode($swooleRequest->rawContent(), true);
         }
         $request = new Request(
             $swooleRequest->server,
@@ -591,7 +599,7 @@ class Dispatcher
             $swooleRequest->header ? : [],
             $swooleRequest->cookie ? : [],
             $swooleRequest->get ? : [],
-            $swooleRequest->post ? : [],
+            $postData ? : [],
             str_replace('HTTP/', '', $swooleRequest->server['server_protocol'])
         );
         return $request;

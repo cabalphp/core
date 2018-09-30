@@ -55,7 +55,7 @@ class DocumentController
                         if (strpos($paramName, '.') !== false) {
                             $paramName = str_repeat('&nbsp;', substr_count($paramName, '.') * 4) . $paramName;
                         }
-                        $table[] = sprintf("| %s | %s | %s | %s | %s |", $paramName, $paramInfo['type'], $paramInfo['default'] ? : '', $paramInfo['constraint'], $paramInfo['description']);
+                        $table[] = sprintf("| %s | %s | %s | %s | %s |", $paramName, $paramInfo['type'], $paramInfo['default'], $paramInfo['constraint'], $paramInfo['description']);
                     }
                     $table = implode("\r\n", $table);
                     $lines[] = $table;
