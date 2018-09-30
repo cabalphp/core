@@ -576,7 +576,6 @@ class Dispatcher
     protected function newRequest($swooleRequest, $method = null)
     {
         $scheme = strtolower(current(explode('/', $swooleRequest->server['server_protocol'])));
-        var_dump($swooleRequest->header);
         if (!isset($swooleRequest->header['host'])) {
             Logger::debug('Header lost header field', [$swooleRequest->header]);
         }
