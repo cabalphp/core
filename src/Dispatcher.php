@@ -133,7 +133,7 @@ class Dispatcher
         if ($server->configure('cabal.swoole.task_enable_coroutine', false)) {
             /** @var \Swoole\Server\Task $task * */
             $task = $params[0];
-            list($taskId, $workerId, $data) = [$task->id, $task->workerId, $task->data];
+            list($taskId, $workerId, $data) = [$task->id, $task->worker_id, $task->data];
         } else {
             list($taskId, $workerId, $data) = [$params[0], $params[1], $params[2]];
         }
