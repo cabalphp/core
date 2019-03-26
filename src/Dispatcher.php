@@ -1,4 +1,5 @@
 <?php
+
 namespace Cabal\Core;
 
 use Zend\Diactoros\ServerRequest;
@@ -127,8 +128,16 @@ class Dispatcher
         }
     }
 
-    public function onTask(Server $server, $taskId, $workerId, $data)
+    public function onTask(Server $server, ...$params)
     {
+        if ($server->configure('cabal.swoole.task_enable_coroutine', false)) {
+            /** @var \Swoole\Server\Task $task * */
+            $task = $params[0];
+            list($taskId, $workerId, $data) = [$task->id, $task->worker_id, $task->data];
+        } else {
+            list($taskId, $workerId, $data) = [$params[0], $params[1], $params[2]];
+        }
+
         $chain = $this->newChain($data);
         try {
             $response = $chain->execute([$server, $taskId, $workerId], $this->middlewares);
@@ -139,6 +148,7 @@ class Dispatcher
             return $response;
         }
     }
+
 
     public function onFinish(Server $server, $taskId, $data)
     {
@@ -429,7 +439,7 @@ class Dispatcher
             );
         }
         Logger::error($ex->__toString(), [
-            'taskId' => $taskId,
+            'taskId'   => $taskId,
             'workerId' => $workerId,
         ]);
     }
@@ -519,6 +529,7 @@ class Dispatcher
     {
         $this->extends[$port] = $handlerClass;
     }
+
     /**
      * Undocumented function
      *
@@ -580,7 +591,7 @@ class Dispatcher
             Logger::debug('Header lost header field', [$swooleRequest->header]);
         }
         $fullUri = implode('', [$scheme, '://', $swooleRequest->header['host'], $swooleRequest->server['request_uri']]);
-        $method = $method ? : $swooleRequest->server['request_method'];
+        $method = $method ?: $swooleRequest->server['request_method'];
         $fp = fopen('php://memory', 'rw');
         if ($swooleRequest->rawContent()) {
             fwrite($fp, $swooleRequest->rawContent());
@@ -591,14 +602,14 @@ class Dispatcher
         }
         $request = new Request(
             $swooleRequest->server,
-            $swooleRequest->files ? : [],
+            $swooleRequest->files ?: [],
             $fullUri,
             $method,
             $fp,
-            $swooleRequest->header ? : [],
-            $swooleRequest->cookie ? : [],
-            $swooleRequest->get ? : [],
-            $postData ? : [],
+            $swooleRequest->header ?: [],
+            $swooleRequest->cookie ?: [],
+            $swooleRequest->get ?: [],
+            $postData ?: [],
             str_replace('HTTP/', '', $swooleRequest->server['server_protocol'])
         );
         return $request;
