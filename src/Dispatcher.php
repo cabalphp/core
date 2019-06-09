@@ -1,4 +1,5 @@
 <?php
+
 namespace Cabal\Core;
 
 use Zend\Diactoros\ServerRequest;
@@ -127,8 +128,16 @@ class Dispatcher
         }
     }
 
-    public function onTask(Server $server, $taskId, $workerId, $data)
+    public function onTask(Server $server, ...$params)
     {
+        if ($server->configure('cabal.swoole.task_enable_coroutine', false)) {
+            /** @var \Swoole\Server\Task $task * */
+            $task = $params[0];
+            list($taskId, $workerId, $data) = [$task->id, $task->worker_id, $task->data];
+        } else {
+            list($taskId, $workerId, $data) = [$params[0], $params[1], $params[2]];
+        }
+
         $chain = $this->newChain($data);
         try {
             $response = $chain->execute([$server, $taskId, $workerId], $this->middlewares);
@@ -139,6 +148,7 @@ class Dispatcher
             return $response;
         }
     }
+
 
     public function onFinish(Server $server, $taskId, $data)
     {
@@ -427,7 +437,7 @@ class Dispatcher
             );
         }
         Logger::error($ex->__toString(), [
-            'taskId' => $taskId,
+            'taskId'   => $taskId,
             'workerId' => $workerId,
         ]);
     }
@@ -516,6 +526,7 @@ class Dispatcher
     {
         $this->extends[$port] = $handlerClass;
     }
+
     /**
      * Undocumented function
      *
