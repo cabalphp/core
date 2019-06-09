@@ -181,7 +181,6 @@ class Dispatcher
                     require $taskPath;
                 }
             }
-
         } else {
             $this->route = new RouteCollection();
             $route = $this->route;
@@ -349,7 +348,6 @@ class Dispatcher
             }
         }
         $swooleResponse->end($response->getBody());
-
     }
 
     public function addMiddleware($nameOrMiddlewares, $handler = null)
@@ -512,7 +510,6 @@ class Dispatcher
         }
         $response = $response->withStatus(101);
         return $response;
-
     }
 
     public function setExtendServer($port, $handlerClass)
@@ -580,7 +577,7 @@ class Dispatcher
             Logger::debug('Header lost header field', [$swooleRequest->header]);
         }
         $fullUri = implode('', [$scheme, '://', $swooleRequest->header['host'], $swooleRequest->server['request_uri']]);
-        $method = $method ? : $swooleRequest->server['request_method'];
+        $method = $method ?: $swooleRequest->server['request_method'];
         $fp = fopen('php://memory', 'rw');
         if ($swooleRequest->rawContent()) {
             fwrite($fp, $swooleRequest->rawContent());
@@ -591,14 +588,14 @@ class Dispatcher
         }
         $request = new Request(
             $swooleRequest->server,
-            $swooleRequest->files ? : [],
+            $swooleRequest->files ?: [],
             $fullUri,
             $method,
             $fp,
-            $swooleRequest->header ? : [],
-            $swooleRequest->cookie ? : [],
-            $swooleRequest->get ? : [],
-            $postData ? : [],
+            $swooleRequest->header ?: [],
+            $swooleRequest->cookie ?: [],
+            $swooleRequest->get ?: [],
+            $postData ?: [],
             str_replace('HTTP/', '', $swooleRequest->server['server_protocol'])
         );
         return $request;

@@ -59,7 +59,12 @@ class Manager implements RepositoryInterface
 
     public function push($connection)
     {
-        $this->pools[$connection->getId()]->push($connection);
+        if ($this->pools[$connection->getId()]->count() >= 5000) {
+            $connection->close();
+            $connection = null;
+        } else {
+            $this->pools[$connection->getId()]->push($connection);
+        }
     }
 
     protected function createRedisStore($config)
@@ -76,12 +81,10 @@ class Manager implements RepositoryInterface
         if ($connection) {
             try {
                 if (!$connection->isConnected()) {
-                    echo "redis连接可能已断开: 没有响应\r\n";
                     $connection = null;
                 }
             } catch (\Exception $ex) {
                 $connection = null;
-                echo "redis连接可能已断开:" . $ex->getMessage() . "\r\n"; 
                 //@todo: log  
             }
         }
@@ -90,7 +93,7 @@ class Manager implements RepositoryInterface
                 $connection = new Connection\CoroutineRedis();
                 $connection->connect($config['host'], $config['port']);
                 if (!$connection->isConnected()) {
-                    throw new Exception("Redis连接失败:" . $connection->errMsg, $connection->errCode);
+                    throw new Exception("Redis连接失败:{$config['host']}:{$config['port']} - " . $connection->errMsg, $connection->errCode);
                 }
                 if (isset($config['auth']) && $config['auth']) {
                     $connection->auth($config['auth']);
@@ -101,7 +104,7 @@ class Manager implements RepositoryInterface
                 try {
                     $connection->pconnect($config['host'], $config['port']);
                 } catch (\Exception $ex) {
-                    throw new Exception("Redis连接失败:" . $ex->getMessage(), $ex->getCode(), $ex);
+                    throw new Exception("Redis连接失败:{$config['host']}:{$config['port']} - " . $ex->getMessage(), $ex->getCode(), $ex);
                 }
                 if (isset($config['auth']) && $config['auth']) {
                     $connection->auth($config['auth']);

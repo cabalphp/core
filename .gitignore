@@ -6,3 +6,4 @@
 /test/
 /*.php
 .DS_Store
+src/Server/Pool.php
