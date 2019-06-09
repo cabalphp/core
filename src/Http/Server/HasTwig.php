@@ -9,8 +9,8 @@ trait HasTwig
     {
         if (!$this->twig) {
 
-            $loader = new \Twig\Loader\FilesystemLoader($this->configure('view.paths',$this->rootPath('var/template')));
-            $this->twig = new \Twig\Environment($loader, $this->configure('view.options',[]));
+            $loader = new \Twig\Loader\FilesystemLoader($this->configure('twig.paths',$this->rootPath('var/template')));
+            $this->twig = new \Twig\Environment($loader, $this->configure('twig.options',[]));
         }
         return $this->twig;
     }
