@@ -19,7 +19,7 @@ use Cabal\Core\Http\Frame;
 use Cabal\Core\Http\Response;
 use Cabal\Core\Exception\BadRequestException;
 use Cabal\Core\Logger\CoroutineHandler;
-
+use Cabal\Route\UrlBuilder;
 
 class Dispatcher
 {
@@ -326,7 +326,14 @@ class Dispatcher
     {
         $request = $this->newRequest($swooleRequest);
         list($code, $chain, $vars) = $this->route->dispatch($request);
-
+        $request = $request->withAttribute('routeName', $chain['name']);
+        $request->urlBuilder(new UrlBuilder(
+            $this->route,
+            $chain['name'] ?? '',
+            $swooleRequest->header['host'] ?? '',
+            strtolower(current(explode('/', $swooleRequest->server['server_protocol'] ?? 'http://'))),
+            array_merge($request->all(), $vars)
+        ));
         switch ($code) {
             case Route::NOT_FOUND:
                 $response = $this->notFoundResponse($request);

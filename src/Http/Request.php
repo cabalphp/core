@@ -2,9 +2,23 @@
 namespace Cabal\Core\Http;
 
 use Zend\Diactoros\ServerRequest;
+use Cabal\Route\UrlBuilder;
 
 class Request extends ServerRequest
 {
+    /**
+     * @var \Cabal\Route\UrlBuilder
+     */
+    protected $urlBuilder;
+
+    public function urlBuilder(UrlBuilder $urlBuilder = null)
+    {
+        if ($urlBuilder) {
+            $this->urlBuilder = $urlBuilder;
+        }
+        return $this->urlBuilder;
+    }
+
     public function ip()
     {
         return array_get($this->getServerParams(), 'remote_addr');
