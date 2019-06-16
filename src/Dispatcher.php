@@ -58,7 +58,7 @@ class Dispatcher
     {
         set_error_handler(function ($level, $message, $file, $line) {
             throw new \ErrorException($message, 0, $level, $file, $line);
-        }, E_ALL);
+        }, E_ALL & ~E_USER_DEPRECATED);
     }
 
     public function setServer(Server $server)
