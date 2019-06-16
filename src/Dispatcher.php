@@ -326,10 +326,10 @@ class Dispatcher
     {
         $request = $this->newRequest($swooleRequest);
         list($code, $chain, $vars) = $this->route->dispatch($request);
-        $request = $request->withAttribute('routeName', $chain['name']);
+        $request = $request->withAttribute('routeName', $chain['options']['name'] ?? '');
         $request->urlBuilder(new UrlBuilder(
             $this->route,
-            $chain['name'] ?? '',
+            $request->getAttribute('routeName'),
             $swooleRequest->header['host'] ?? '',
             strtolower(current(explode('/', $swooleRequest->server['server_protocol'] ?? 'http://'))),
             array_merge($request->all(), $vars)
