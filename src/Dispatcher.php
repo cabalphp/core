@@ -121,7 +121,7 @@ class Dispatcher
                 $chain = \swoole_serialize::unpack($fdSession['__chain']);
                 $vars = \swoole_serialize::unpack($fdSession['__vars']);
 
-                $chain = new Chain($chain['handler'] . 'Close', [], $vars);
+                $chain = new Chain($chain['handler'] . 'Close', [], $vars ?: []);
                 $chain->execute([$this->server, $fd, $reactorId, $fdSession], []);
                 $this->server->destroyFdSession($fd);
             }
