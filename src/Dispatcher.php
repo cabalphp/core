@@ -332,7 +332,7 @@ class Dispatcher
             $request->getAttribute('routeName'),
             $swooleRequest->header['host'] ?? '',
             strtolower(current(explode('/', $swooleRequest->server['server_protocol'] ?? 'http://'))),
-            array_merge($request->all(), $vars)
+            array_merge($request->all(), $vars ?: [])
         ));
         switch ($code) {
             case Route::NOT_FOUND:
